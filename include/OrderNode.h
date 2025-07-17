@@ -1,17 +1,9 @@
 #pragma once
 
-#ifdef SelfTradePrevention
-#error "SelfTradePrevention is defined as a macro!"
-#endif
-
 #include <memory>
 #include <string>
 
 #include "SelfTradePrevention.h"
-
-// Test if enum is visible
-static_assert(static_cast<int>(SelfTradePrevention::RTO) >= 0, "SelfTradePrevention not properly defined");
-
 #include "OrderType.h"
 #include "Side.h"
 #include "Using.h"

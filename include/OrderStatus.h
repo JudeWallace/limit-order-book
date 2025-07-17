@@ -1,6 +1,6 @@
 #pragma once
 
-enum OrderStatus {
+enum class OrderStatus {
 	Filled,
 	PartiallyFilled,
 	NoLiquidity,

@@ -13,6 +13,7 @@
 #include "OrderType.h"
 #include "PriceLevel.h"
 #include "Side.h"
+#include "Using.h"
 
 class OrderBook {
   private:
