@@ -13,6 +13,7 @@ set(SOURCES
     src/OrderBook.cpp
     src/OrderNode.cpp
     src/PriceLevel.cpp
+    src/OrderStatus.cpp
 )
 
 add_executable(main ${SOURCES})
