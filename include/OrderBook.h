@@ -6,12 +6,12 @@
 #include <string>
 #include <unordered_map>
 
-#include "SelfTradePrevention.h"
 #include "MatchResult.h"
 #include "OrderNode.h"
 #include "OrderStatus.h"
 #include "OrderType.h"
 #include "PriceLevel.h"
+#include "SelfTradePrevention.h"
 #include "Side.h"
 #include "Using.h"
 
@@ -34,6 +34,7 @@ class OrderBook {
 	void printLevels() const;
 	MatchResult matchOrders(const std::shared_ptr<OrderNode> &order);
 	SelfTradeResult resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder);
+	template <typename Book> bool canFullyFillFOK(const std::shared_ptr<OrderNode> &order, const Book &book) const;
 
 	~OrderBook() = default;
 };

@@ -83,6 +83,15 @@ SelfTradeResult OrderBook::resolveSelfTrade(const std::shared_ptr<OrderNode> &ta
 	return SelfTradeResult::Error;
 }
 
+template <typename Book> bool OrderBook::canFullyFillFOK(const std::shared_ptr<OrderNode> &order, const Book &book) const {
+	Quantity requiredAmount = order->initialQuantity;
+	// loop over whole book while level > limit accumalte resting quantity (exc self trades) if possible
+	//  true let the matching engine do it's thing and partially fill until filled
+	//  false cannot fill so cancel order
+
+	return false;
+}
+
 MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 	MatchResult tradeResult;
 
