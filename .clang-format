@@ -1,0 +1,19 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+BreakBeforeBraces: Attach
+
+# Prevent breaking after '(' in function declarations
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: Inline
+
+# Controls how function parameters are split
+PenaltyBreakBeforeFirstCallParameter: 10000
+PenaltyBreakFunctionDeclaration: 10000
+PenaltyBreakString: 10000
+ColumnLimit: 1200
+
+# Keep function declarations in one line if possible
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
