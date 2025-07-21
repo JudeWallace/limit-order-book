@@ -34,7 +34,7 @@ class OrderBook {
 	void printLevels() const;
 	MatchResult matchOrders(const std::shared_ptr<OrderNode> &order);
 	SelfTradeResult resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder);
-	template <typename Book> bool canFullyFillFOK(const std::shared_ptr<OrderNode> &order, const Book &book) const;
+	bool canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const;
 
 	~OrderBook() = default;
 };

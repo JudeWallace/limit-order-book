@@ -18,7 +18,7 @@ struct OrderNode {
 	Quantity initialQuantity;
 	Quantity remainingQuantity;
 
-	SelfTradePrevention stpf = SelfTradePrevention::RTO;
+	SelfTradePrevention stp = SelfTradePrevention::RTO;
 
 	std::weak_ptr<OrderNode> prevOrder;
 	std::shared_ptr<OrderNode> nextOrder = nullptr;
