@@ -90,10 +90,10 @@ SelfTradeResult OrderBook::resolveSelfTrade(const std::shared_ptr<OrderNode> &ta
 bool OrderBook::canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const {
 	Quantity requiredLiquidtiy = order->initialQuantity;
 	Quantity restingQuantity = 0;
-	
+
 	switch (order->side) {
 		case Side::BUY:
-		 	for(auto it = asks_.begin(); it != asks_.end(); it++) {
+			for (auto it = asks_.begin(); it != asks_.end(); it++) {
 				if (it->first <= order->price) {
 					restingQuantity += it->second.levelQuantity_;
 				} else {
@@ -105,46 +105,72 @@ bool OrderBook::canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const {
 				return false;
 
 			restingQuantity = 0;
-		 	
-			for(auto it = asks_.begin(); it != asks_.end(); it++) {
-				if (it->first <= order->price) {
-					auto restingOrder = it->second.peek();
-					while(restingOrder) {
-						if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
-							return false;
-						} else if (restingOrder->clientId != order->clientId) {
-							restingQuantity += restingOrder->remainingQuantity;
-						}
 
-						if (restingQuantity >= requiredLiquidtiy) 
-							return true;
-
-						restingOrder = restingOrder->nextOrder;
+			for (auto it = asks_.begin(); it != asks_.end(); it++) {
+				auto restingOrder = it->second.peek();
+				while (restingOrder) {
+					if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
+						return false;
+					} else if (restingOrder->clientId != order->clientId) {
+						restingQuantity += restingOrder->remainingQuantity;
 					}
 
+					if (restingQuantity >= requiredLiquidtiy)
+						return true;
+
+					restingOrder = restingOrder->nextOrder;
 				}
 			}
 			break;
 		case Side::SELL:
+			for (auto it = bids_.begin(); it != bids_.end(); it++) {
+				if (it->first >= order->price) {
+					restingQuantity += it->second.levelQuantity_;
+				} else {
+					break;
+				}
+			}
+
+			if (requiredLiquidtiy > restingQuantity)
+				return false;
+
+			restingQuantity = 0;
+
+			for (auto it = bids_.begin(); it != bids_.end(); it++) {
+				auto restingOrder = it->second.peek();
+				while (restingOrder) {
+					if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
+						return false;
+					} else if (restingOrder->clientId != order->clientId) {
+						restingQuantity += restingOrder->remainingQuantity;
+					}
+
+					if (restingQuantity >= requiredLiquidtiy)
+						return true;
+
+					restingOrder = restingOrder->nextOrder;
+				}
+			}
 			break;
 		default:
 			break;
 	}
-	
+
 	return false;
 }
 
 MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 	MatchResult tradeResult;
 
-	if (order->side == Side::BUY) {
-		if (order->type == OrderType::FillOrKill) {
-			if (!canFullyFillFOK(order)) {
-				tradeResult.status = OrderStatus::Cancelled;
-				return tradeResult;
-			}
+	if (order->type == OrderType::FillOrKill) {
+		if (!canFullyFillFOK(order)) {
+			tradeResult.status = OrderStatus::Cancelled;
+			return tradeResult;
 		}
-		
+	}
+
+	if (order->side == Side::BUY) {
+
 		while (order->remainingQuantity > 0 && !asks_.empty()) {
 			auto it = asks_.begin();
 			Price bestAsk = it->first;
