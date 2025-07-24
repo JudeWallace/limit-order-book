@@ -1,4 +1,5 @@
 #include "OrderBook.h"
+#include "Server.h"
 
 int main() {
 	OrderBook ob;
@@ -10,6 +11,9 @@ int main() {
 	std::cout << "=== Price Level ====" << std::endl;
 	ob.printLevels();
 	std::cout << "=======" << std::endl;
+
+	Server server;
+	server.run();
 
 	/*
 	ob.addOrder(2, "GTE123", OrderType::Limit, Side::BUY, 99.0, 40);

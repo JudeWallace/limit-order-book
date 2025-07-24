@@ -7,8 +7,19 @@ This repository is the backend written in C++ (work in progress)
 # System architecture
 add diagram here
 
-## API endpoints
-TODO
+## Server communications
+This project currently uses Crow with Boost.Asio as a proof-of-concept. Eventually, the backend will be fully migrated to Boost libraries for improved performance and scalability.
+
+You can find more information about Crow on their official website: https://crowcpp.org/master/
+
+### Websocket
+Due to the nature of this application, bi-directional communciation is essential. WebSockets are used for:
+- Trade acknowledgments and updates
+- Market data feeds
+- Executing orders from the frontend (faster and more efficient than HTTP requests)
+
+### REST
+For less time-sensitive parts of the application, a simple REST API will be exposed. 
 
 ## Live Market data feed
 TODO
