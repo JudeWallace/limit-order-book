@@ -20,15 +20,12 @@ class OrderBook {
 	Bids bids_;
 	Asks asks_;
 	std::unordered_map<OrderId, std::shared_ptr<OrderNode>> allOrders_;
-	std::atomic<OrderId> internalId_{0};
-
-	// OrderBookBroadcaster broadcaster_; // placeholder
 
   public:
 	OrderBook() = default;
 
-	void addOrder(ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Quantity orderQuantity);
-	void addOrder(ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price, Quantity orderQuantity);
+	void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Quantity orderQuantity);
+	void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price, Quantity orderQuantity);
 	void cancelOrder(OrderId internalId);
 	void modifyOrder(const std::shared_ptr<OrderNode> &order);
 	void printLevels() const;

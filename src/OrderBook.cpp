@@ -1,10 +1,8 @@
 #include "OrderBook.h"
 
-void OrderBook::addOrder(ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Quantity orderQuantity) {
-	auto thisOrderId = ++internalId_;
-
+void OrderBook::addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Quantity orderQuantity) {
 	if ((side == Side::BUY && !asks_.empty()) || (side == Side::SELL && !bids_.empty())) {
-		auto order = std::make_shared<OrderNode>(clId, externalClientOrderId, thisOrderId, orderType, side, orderQuantity);
+		auto order = std::make_shared<OrderNode>(clId, externalClientOrderId, internalId, orderType, side, orderQuantity);
 
 		auto outcome = matchOrders(order);
 		std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
@@ -14,9 +12,8 @@ void OrderBook::addOrder(ClientId clId, const std::string &externalClientOrderId
 	// std::cout << "No liquidity for order: " << thisOrderId << std::endl;
 }
 
-void OrderBook::addOrder(ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price, Quantity orderQuantity) {
-	auto thisOrderId = ++internalId_;
-	auto order = std::make_shared<OrderNode>(clId, externalClientOrderId, thisOrderId, orderType, side, price, orderQuantity);
+void OrderBook::addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price, Quantity orderQuantity) {
+	auto order = std::make_shared<OrderNode>(clId, externalClientOrderId, internalId, orderType, side, price, orderQuantity);
 
 	auto outcome = matchOrders(order);
 	std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
@@ -34,7 +31,7 @@ void OrderBook::addOrder(ClientId clId, const std::string &externalClientOrderId
 			asks_[order->price].addOrder(order);
 		}
 
-		allOrders_[thisOrderId] = order;
+		allOrders_[internalId] = order;
 		outcome.status = OrderStatus::PlacedOrder;
 		std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
 	}
@@ -73,16 +70,16 @@ void OrderBook::cancelOrder(OrderId internalId) {
 
 SelfTradeResult OrderBook::resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder) {
 	switch (takingOrder->stp) {
-		case SelfTradePrevention::RTO:
-			return SelfTradeResult::Cancelled;
-		case SelfTradePrevention::RRO:
-			// publish message
-			cancelOrder(restingOrder->orderId);
-			return SelfTradeResult::Continue;
-		case SelfTradePrevention::RBO:
-			// publish message
-			cancelOrder(restingOrder->orderId);
-			return SelfTradeResult::Cancelled;
+	case SelfTradePrevention::RTO:
+		return SelfTradeResult::Cancelled;
+	case SelfTradePrevention::RRO:
+		// publish message
+		cancelOrder(restingOrder->orderId);
+		return SelfTradeResult::Continue;
+	case SelfTradePrevention::RBO:
+		// publish message
+		cancelOrder(restingOrder->orderId);
+		return SelfTradeResult::Cancelled;
 	}
 	return SelfTradeResult::Error;
 }
@@ -92,68 +89,68 @@ bool OrderBook::canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const {
 	Quantity restingQuantity = 0;
 
 	switch (order->side) {
-		case Side::BUY:
-			for (auto it = asks_.begin(); it != asks_.end(); it++) {
-				if (it->first <= order->price) {
-					restingQuantity += it->second.levelQuantity_;
-				} else {
-					break;
-				}
+	case Side::BUY:
+		for (auto it = asks_.begin(); it != asks_.end(); it++) {
+			if (it->first <= order->price) {
+				restingQuantity += it->second.levelQuantity_;
+			} else {
+				break;
 			}
+		}
 
-			if (requiredLiquidtiy > restingQuantity)
-				return false;
+		if (requiredLiquidtiy > restingQuantity)
+			return false;
 
-			restingQuantity = 0;
+		restingQuantity = 0;
 
-			for (auto it = asks_.begin(); it != asks_.end(); it++) {
-				auto restingOrder = it->second.peek();
-				while (restingOrder) {
-					if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
-						return false;
-					} else if (restingOrder->clientId != order->clientId) {
-						restingQuantity += restingOrder->remainingQuantity;
-					}
-
-					if (restingQuantity >= requiredLiquidtiy)
-						return true;
-
-					restingOrder = restingOrder->nextOrder;
+		for (auto it = asks_.begin(); it != asks_.end(); it++) {
+			auto restingOrder = it->second.peek();
+			while (restingOrder) {
+				if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
+					return false;
+				} else if (restingOrder->clientId != order->clientId) {
+					restingQuantity += restingOrder->remainingQuantity;
 				}
+
+				if (restingQuantity >= requiredLiquidtiy)
+					return true;
+
+				restingOrder = restingOrder->nextOrder;
 			}
-			break;
-		case Side::SELL:
-			for (auto it = bids_.begin(); it != bids_.end(); it++) {
-				if (it->first >= order->price) {
-					restingQuantity += it->second.levelQuantity_;
-				} else {
-					break;
+		}
+		break;
+	case Side::SELL:
+		for (auto it = bids_.begin(); it != bids_.end(); it++) {
+			if (it->first >= order->price) {
+				restingQuantity += it->second.levelQuantity_;
+			} else {
+				break;
+			}
+		}
+
+		if (requiredLiquidtiy > restingQuantity)
+			return false;
+
+		restingQuantity = 0;
+
+		for (auto it = bids_.begin(); it != bids_.end(); it++) {
+			auto restingOrder = it->second.peek();
+			while (restingOrder) {
+				if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
+					return false;
+				} else if (restingOrder->clientId != order->clientId) {
+					restingQuantity += restingOrder->remainingQuantity;
 				}
+
+				if (restingQuantity >= requiredLiquidtiy)
+					return true;
+
+				restingOrder = restingOrder->nextOrder;
 			}
-
-			if (requiredLiquidtiy > restingQuantity)
-				return false;
-
-			restingQuantity = 0;
-
-			for (auto it = bids_.begin(); it != bids_.end(); it++) {
-				auto restingOrder = it->second.peek();
-				while (restingOrder) {
-					if ((restingOrder->clientId == order->clientId) && order->stp != SelfTradePrevention::RRO) {
-						return false;
-					} else if (restingOrder->clientId != order->clientId) {
-						restingQuantity += restingOrder->remainingQuantity;
-					}
-
-					if (restingQuantity >= requiredLiquidtiy)
-						return true;
-
-					restingOrder = restingOrder->nextOrder;
-				}
-			}
-			break;
-		default:
-			break;
+		}
+		break;
+	default:
+		break;
 	}
 
 	return false;
