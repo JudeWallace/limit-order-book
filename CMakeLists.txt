@@ -22,6 +22,7 @@ set(SOURCES
     src/OrderNode.cpp
     src/PriceLevel.cpp
     src/OrderStatus.cpp
+    src/RingBuffer.cpp
 )
 
 add_executable(main ${SOURCES})

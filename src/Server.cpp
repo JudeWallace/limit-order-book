@@ -1,23 +1,11 @@
 #include "Server.h"
 
-Server::Server() : next_id_(0) {
+Server::Server(RingBuffer &ringBuffer) : next_id_(0), messagingQueue_(ringBuffer) {
 	setupRoutes();
 }
 
 void Server::run() {
-	std::thread server_thread([this]() { app_.port(7070).multithreaded().run(); });
-
-	while (true) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		for (auto &pair : connections_) {
-			auto *conn = pair.second;
-			if (conn) {
-				conn->send_text("Heartbeat from server");
-			}
-		}
-	}
-
-	server_thread.join();
+	app_.port(7070).multithreaded().run();
 }
 
 void Server::setupRoutes() {
@@ -31,6 +19,14 @@ void Server::setupRoutes() {
 		    connections_[std::to_string(clientId)] = &conn;
 		    conn.send_text("Hello, from your WebSocket connection!");
 	    })
-	    .onmessage([](crow::websocket::connection &conn, const std::string &msg, bool) { conn.send_text("Echo: " + msg); })
+	    .onmessage([this](crow::websocket::connection &conn, const std::string &msg, bool) {
+		    bool added = messagingQueue_.enqueue();
+
+		    if (added) {
+			    conn.send_text("Order request added to the queue.");
+		    } else {
+			    conn.send_text("Queue is full, please try again later.");
+		    }
+	    })
 	    .onclose([](crow::websocket::connection &conn, const std::string &reason, uint16_t) { std::cout << "WebSocket closed: " << reason << std::endl; });
 }

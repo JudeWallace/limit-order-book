@@ -1,5 +1,5 @@
 #pragma once
 
 struct OrderRequest {
-    int Id;
+	int Id = 1;
 };

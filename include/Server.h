@@ -7,6 +7,8 @@
 #include <thread>
 #include <unordered_map>
 
+#include "RingBuffer.h"
+
 using Id = uint32_t;
 
 class Server {
@@ -15,10 +17,11 @@ class Server {
 
 	std::atomic<Id> next_id_{0};
 	std::unordered_map<std::string, crow::websocket::connection *> connections_;
+	RingBuffer &messagingQueue_;
 
 	void setupRoutes();
 
   public:
-	Server();
+	Server(RingBuffer &messagingQueue);
 	void run();
 };
