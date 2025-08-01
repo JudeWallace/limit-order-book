@@ -1,8 +1,8 @@
 # Central limit order book
 
 # Summary
+This repository is my version of a high-performance limit order book implemented in C++. It is still a work in progress with the aim of pairing it up with a client frontend
 
-This repository is the backend written in C++ (work in progress)
 
 # System architecture
 add diagram here
@@ -39,6 +39,17 @@ This is a LOB that can handle many different order types like a real exchange. T
 - Good till day
 
 ## LMAX Disruptor pattern
+This is the inspiration for how orders are piped to the order book. The LMAX Disruptor pattern was originally developed by the LMAX Exchange to achieve extremely high throughput and low latency for financial trading systems. It is a lock-free, single-writer ring buffer that allows multiple consumer threads to process events in a time-priority and deterministic order.
+
+
+For my implementation, I developed a multi-producer, single-consumer (MPSC) ring buffer model. This architecture allows multiple threads (or upstream components) to enqueue orders concurrently, while a single dedicated consumer thread processes them in strict time order — just like the LMAX Disruptor’s core intent. This single consumer thread also reduces the complexity of the datastructure and the requirement to handle batch processing of orders (Future improvements could change this).
+
+<b>Key Design Elements:</b>
+* Multiple Producers: Multiple threads can safely enquire orders without contention.
+* Single Consumer: A single thread processing orders in the ring buffer, preserving the time-priority requirement.
+* Lock-Free via Sequencing: Like LMAX, I avoided mutex's by using sequence numbers to manager buffer slots. Each producers atomically claims a slot, write its data and signals it's ready to be read via a published sequence.
+    * Idea being a consumer can only consume if the buffer slot sequence number == consumer sequence value
+* Wait strategy: If the buffer is full at the time of enqueue a spin-wait is in place so the thread yeilds and try's again
 
 ## Self trade prevention
 Self-trade prevention (STP) is a regulatory control implemented by exchanges to prevent a market participant from unintentionally trading with themselves, which can create misleading signals about market demand, inflate volume, or distort price discovery. Practices that may be considered manipulative under market abuse regulations.

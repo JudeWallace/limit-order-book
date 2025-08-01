@@ -6,7 +6,8 @@ RingBuffer::RingBuffer() {
 	}
 }
 
-bool RingBuffer::enqueue() {
+bool RingBuffer::enqueue(ClientId clientId, std::string clOrderId, OrderId orderId, Side side, Price price, OrderType type, Quantity initialQuantity,
+                         Quantity remainingQuantity, SelfTradePrevention stp) {
 	size_t pos = writeIdx_.load(std::memory_order_relaxed);
 
 	while (true) {
@@ -16,7 +17,7 @@ bool RingBuffer::enqueue() {
 
 		if (diff == 0) {
 			if (writeIdx_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)) {
-				buffer_[index] = OrderRequest();
+				buffer_[index] = OrderRequest(clientId, clOrderId, orderId, side, price, type, initialQuantity, remainingQuantity, stp);
 				sequences_[index].store(pos + 1, std::memory_order_release);
 				return true;
 			}
@@ -29,17 +30,18 @@ bool RingBuffer::enqueue() {
 	}
 }
 
-bool RingBuffer::dequeue() {
+std::unique_ptr<OrderRequest> RingBuffer::dequeue() {
 	size_t pos = readIdx_;
 	size_t index = pos & mask_;
 	size_t seq = sequences_[index].load(std::memory_order_acquire);
 	intptr_t diff = static_cast<intptr_t>(seq) - static_cast<intptr_t>(pos + 1);
 
 	if (diff == 0) {
-		auto data_out = buffer_[index];
+		std::unique_ptr<OrderRequest> orderToProcess = std::make_unique<OrderRequest>(std::move(buffer_[index]));
+		buffer_[index] = OrderRequest();
 		sequences_[index].store(pos + SIZE, std::memory_order_release);
 		++readIdx_;
-		return true;
+		return orderToProcess;
 	}
-	return false;
+	return nullptr;
 }

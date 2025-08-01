@@ -20,13 +20,16 @@ void Server::setupRoutes() {
 		    conn.send_text("Hello, from your WebSocket connection!");
 	    })
 	    .onmessage([this](crow::websocket::connection &conn, const std::string &msg, bool) {
-		    bool added = messagingQueue_.enqueue();
+		    /*
+		            bool added = messagingQueue_.enqueue();
 
-		    if (added) {
-			    conn.send_text("Order request added to the queue.");
-		    } else {
-			    conn.send_text("Queue is full, please try again later.");
-		    }
+		            if (added) {
+		                conn.send_text("Order request added to the queue.");
+		            } else {
+		                conn.send_text("Queue is full, please try again later.");
+		            }
+		            */
 	    })
-	    .onclose([](crow::websocket::connection &conn, const std::string &reason, uint16_t) { std::cout << "WebSocket closed: " << reason << std::endl; });
+	    .onclose(
+	        [](crow::websocket::connection &conn, const std::string &reason, uint16_t) { std::cout << "WebSocket closed: " << reason << std::endl; });
 }

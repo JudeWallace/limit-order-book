@@ -12,16 +12,16 @@
 using Id = uint32_t;
 
 class Server {
-  private:
-	crow::SimpleApp app_;
+	private:
+		crow::SimpleApp app_;
 
-	std::atomic<Id> next_id_{0};
-	std::unordered_map<std::string, crow::websocket::connection *> connections_;
-	RingBuffer &messagingQueue_;
+		std::atomic<Id> next_id_{0};
+		std::unordered_map<std::string, crow::websocket::connection *> connections_;
+		RingBuffer &messagingQueue_;
 
-	void setupRoutes();
+		void setupRoutes();
 
-  public:
-	Server(RingBuffer &messagingQueue);
-	void run();
+	public:
+		Server(RingBuffer &messagingQueue);
+		void run();
 };

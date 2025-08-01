@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
-#include "SelfTradePrevention.h"
 #include "OrderType.h"
+#include "SelfTradePrevention.h"
 #include "Side.h"
 #include "Using.h"
 

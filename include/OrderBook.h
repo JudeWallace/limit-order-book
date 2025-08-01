@@ -16,22 +16,24 @@
 #include "Using.h"
 
 class OrderBook {
-  private:
-	Bids bids_;
-	Asks asks_;
-	std::unordered_map<OrderId, std::shared_ptr<OrderNode>> allOrders_;
+	private:
+		Bids bids_;
+		Asks asks_;
+		std::unordered_map<OrderId, std::shared_ptr<OrderNode>> allOrders_;
+		MatchResult matchOrders(const std::shared_ptr<OrderNode> &order);
+		SelfTradeResult resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder);
+		bool canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const;
 
-  public:
-	OrderBook() = default;
+	public:
+		OrderBook() = default;
 
-	void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Quantity orderQuantity);
-	void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price, Quantity orderQuantity);
-	void cancelOrder(OrderId internalId);
-	void modifyOrder(const std::shared_ptr<OrderNode> &order);
-	void printLevels() const;
-	MatchResult matchOrders(const std::shared_ptr<OrderNode> &order);
-	SelfTradeResult resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder);
-	bool canFullyFillFOK(const std::shared_ptr<OrderNode> &order) const;
+		void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side,
+					Quantity orderQuantity);
+		void addOrder(OrderId internalId, ClientId clId, const std::string &externalClientOrderId, OrderType orderType, Side side, Price price,
+					Quantity orderQuantity);
+		void cancelOrder(OrderId internalId);
+		void modifyOrder(const std::shared_ptr<OrderNode> &order);
+		void printLevels() const;
 
-	~OrderBook() = default;
+		~OrderBook() = default;
 };
