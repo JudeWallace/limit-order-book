@@ -33,6 +33,8 @@ class OrderBook {
 					Quantity orderQuantity);
 		void cancelOrder(OrderId internalId);
 		void modifyOrder(const std::shared_ptr<OrderNode> &order);
+		const Bids& getBids() { return bids_; }
+		const Asks& getAsks() { return asks_; }
 		void printLevels() const;
 
 		~OrderBook() = default;
