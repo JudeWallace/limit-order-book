@@ -5,6 +5,7 @@ void OrderBook::addOrder(OrderId internalId, ClientId clId, const std::string &e
 		auto order = std::make_shared<OrderNode>(clId, externalClientOrderId, internalId, orderType, side, orderQuantity);
 
 		auto outcome = matchOrders(order);
+		updateMarketState();
 		std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
 		return;
 	}
@@ -19,6 +20,7 @@ void OrderBook::addOrder(OrderId internalId, ClientId clId, const std::string &e
 	std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
 
 	if (outcome.status == OrderStatus::Cancelled) {
+		updateMarketState();
 		return;
 	}
 
@@ -35,6 +37,7 @@ void OrderBook::addOrder(OrderId internalId, ClientId clId, const std::string &e
 		outcome.status = OrderStatus::PlacedOrder;
 		std::cout << outcome.status << " for orderId: " << order->orderId << std::endl;
 	}
+	updateMarketState();
 }
 
 void OrderBook::modifyOrder(const std::shared_ptr<OrderNode> &order) {
@@ -66,6 +69,7 @@ void OrderBook::cancelOrder(OrderId internalId) {
 
 	allOrders_.erase(internalId);
 	std::cout << "Cancelled order: " << internalId << std::endl;
+	updateMarketState();
 }
 
 SelfTradeResult OrderBook::resolveSelfTrade(const std::shared_ptr<OrderNode> &takingOrder, const std::shared_ptr<OrderNode> &restingOrder) {
@@ -181,7 +185,6 @@ MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 			while (!level.isEmpty() && order->remainingQuantity > 0) {
 				auto topAskOrder = level.peek();
 
-				// test and resolve for self trade
 				if (order->clientId == topAskOrder->clientId) {
 					if (resolveSelfTrade(order, topAskOrder) == SelfTradeResult::Continue) {
 						continue;
@@ -195,6 +198,8 @@ MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 				order->remainingQuantity -= matched;
 				topAskOrder->remainingQuantity -= matched;
 				level.levelQuantity_ -= matched;
+
+				lastTradedPrice_ = it->first;
 
 				if (topAskOrder->remainingQuantity == 0) {
 					level.pop();
@@ -233,6 +238,8 @@ MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 				topBidOrder->remainingQuantity -= matched;
 				level.levelQuantity_ -= matched;
 
+				lastTradedPrice_ = it->first;
+				
 				if (topBidOrder->remainingQuantity == 0) {
 					level.pop();
 					allOrders_.erase(topBidOrder->orderId);
@@ -252,6 +259,23 @@ MatchResult OrderBook::matchOrders(const std::shared_ptr<OrderNode> &order) {
 	}
 
 	return tradeResult;
+}
+
+void OrderBook::updateMarketState() {
+	Price bestBid = Constants::InvalidPrice;
+	Price bestAsk = Constants::InvalidPrice;
+	if (!bids_.empty())
+		bestBid = getBestBid();
+	
+	if (!asks_.empty())
+		bestAsk = getBestAsk();
+
+	bestBid_ = std::isnan(bestBid) ? Constants::InvalidPrice: bestBid;
+	bestAsk_ = std::isnan(bestAsk) ? Constants::InvalidPrice: bestAsk;
+	
+	if (!std::isnan(bestBid_) && !std::isnan(bestAsk_)) {
+		midPrice_ = (bestBid_ + bestAsk_) / 2;
+	}
 }
 
 void OrderBook::printLevels() const {
